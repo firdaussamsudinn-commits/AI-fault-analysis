@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun  5 22:41:27 2026
+Created on Wed Jul  1 10:56:24 2026
 
 @author: firda
 """
+
 
 import streamlit as st
 import pandas as pd
@@ -24,7 +25,7 @@ from io import BytesIO
 # ==========================================
 
 st.set_page_config(
-    page_title="Fault Intelligence Platform",
+    page_title="Fault Analysis System",
     page_icon="🚨",
     layout="wide"
 )
@@ -32,31 +33,444 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-.main {
-    background-color: #0E1117;
+/* ================================
+BACKGROUND
+================================ */
+
+.stApp{
+
+background:
+radial-gradient(circle at top left,
+rgba(68,199,255,.18),
+transparent 35%),
+
+radial-gradient(circle at top right,
+rgba(168,85,247,.18),
+transparent 35%),
+
+radial-gradient(circle at bottom,
+rgba(255,90,205,.10),
+transparent 45%),
+
+linear-gradient(
+135deg,
+#050816,
+#081326,
+#0b1022);
+
+color:white;
+
 }
 
-[data-testid="stMetricValue"] {
-    font-size: 28px;
+.main .block-container{
+    padding-top:2rem;
+    padding-left:2rem;
+    padding-right:2rem;
+    max-width:1600px;
 }
 
-[data-testid="metric-container"] {
-    background-color: #1B263B;
-    border: 1px solid #2E4057;
-    padding: 15px;
-    border-radius: 12px;
+/* =================================
+SIDEBAR
+================================= */
+
+[data-testid="stSidebar"]{
+
+    background:linear-gradient(180deg,#0b1020,#111827);
+
+    border-right:1px solid rgba(120,120,255,.25);
+
+    box-shadow:
+    0 0 30px rgba(110,70,255,.15);
+
 }
 
-h1,h2,h3 {
+[data-testid="stSidebar"] *{
+
     color:white;
+
 }
 
+/* =================================
+HEADINGS
+================================= */
+
+h1{
+
+    font-size:52px;
+
+    font-weight:800;
+
+    background:linear-gradient(
+    90deg,
+    #42a5ff,
+    #7d7cff,
+    #f472ff);
+
+    -webkit-background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+
+}
+
+h2{
+
+    color:white;
+
+}
+
+h3{
+
+    color:#E5E7EB;
+
+}
+
+p,label{
+
+    color:#B8C0D4;
+
+}
+
+/* =================================
+UPLOAD BOX
+================================= */
+
+[data-testid="stFileUploader"]{
+
+    border-radius:22px;
+
+    border:1px solid rgba(80,120,255,.35);
+
+    background:rgba(20,24,40,.55);
+
+    backdrop-filter:blur(15px);
+
+    padding:20px;
+
+    box-shadow:
+    0 0 40px rgba(77,125,255,.08);
+
+}
+
+/* =================================
+METRIC CARDS
+================================= */
+
+[data-testid="stMetric"]{
+
+    background:rgba(15,18,35,.65);
+
+    border-radius:20px;
+
+    border:1px solid rgba(90,120,255,.35);
+
+    padding:22px;
+
+    backdrop-filter:blur(12px);
+
+    transition:.35s;
+
+}
+
+[data-testid="stMetric"]:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:
+
+    0 0 15px #3B82F6,
+
+    0 0 30px rgba(147,51,234,.35);
+
+}
+
+[data-testid="stMetricValue"]{
+
+    color:white;
+
+    font-size:38px;
+
+    font-weight:800;
+
+}
+
+[data-testid="stMetricLabel"]{
+
+    color:#94A3B8;
+
+}
+
+/* =================================
+BUTTONS
+================================= */
+
+.stButton>button{
+
+    background:linear-gradient(
+    90deg,
+    #3B82F6,
+    #7C3AED);
+
+    color:white;
+
+    border:none;
+
+    border-radius:14px;
+
+    font-weight:700;
+
+    padding:.6rem 1.2rem;
+
+    transition:.3s;
+
+}
+
+.stButton>button:hover{
+
+    transform:scale(1.05);
+
+    box-shadow:
+
+    0 0 20px #3B82F6,
+
+    0 0 30px #7C3AED;
+
+}
+
+/* =================================
+TABLE
+================================= */
+
+[data-testid="stDataFrame"]{
+
+    background:#111827;
+
+    border-radius:18px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+}
+
+/* =================================
+EXPANDER
+================================= */
+
+div[data-testid="stExpander"]{
+
+    background:#101826;
+
+    border-radius:18px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+}
+
+/* =================================
+PLOTLY
+================================= */
+
+.js-plotly-plot{
+
+    border-radius:20px;
+
+    background:rgba(20,24,40,.55);
+
+}
+
+/* =================================
+SCROLLBAR
+================================= */
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#5B5EFF;
+
+    border-radius:20px;
+
+}
+/* ===========================================
+GRADIENT TEXT
+=========================================== */
+
+.gradient-title{
+
+font-size:58px;
+font-weight:900;
+
+background:linear-gradient(
+90deg,
+#4FC3F7,
+#7C4DFF,
+#FF5ACD);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+text-shadow:
+0 0 18px rgba(79,195,247,.35);
+
+margin-bottom:6px;
+
+}
+
+.gradient-heading{
+
+font-size:40px;
+font-weight:800;
+
+background:linear-gradient(
+90deg,
+#44C7FF,
+#A855F7);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+}
+
+.subtitle{
+
+color:#A5B4FC;
+
+font-size:18px;
+
+margin-top:6px;
+
+}
+
+.section-note{
+
+color:#8FA8D8;
+
+font-size:15px;
+
+}
+/* ===========================================
+KPI CARDS
+=========================================== */
+
+.kpi-card{
+
+background:rgba(15,18,35,.78);
+
+border:1px solid rgba(90,120,255,.25);
+
+border-left:5px solid var(--accent);
+
+border-radius:18px;
+
+padding:18px;
+
+height:145px;
+
+transition:.3s;
+
+box-shadow:
+
+0 8px 40px rgba(0,0,0,.35),
+
+0 0 25px rgba(68,199,255,.08),
+
+0 0 40px rgba(168,85,247,.08);
+
+}
+
+.kpi-card:hover{
+
+transform:translateY(-4px);
+
+box-shadow:0 0 18px rgba(80,120,255,.25);
+
+}
+
+.kpi-title{
+
+font-size:15px;
+
+color:#9CA3AF;
+
+font-weight:600;
+
+margin-bottom:12px;
+
+}
+
+.kpi-value{
+
+font-size:36px;
+
+font-weight:800;
+
+color:white;
+
+}
+
+.kpi-sub{
+
+font-size:13px;
+
+color:#7C8CA8;
+
+margin-top:10px;
+
+}
+
+.cyber-divider{
+
+height:2px;
+
+margin:35px 0;
+
+background:linear-gradient(
+90deg,
+transparent,
+#44C7FF,
+#8B5CF6,
+#FF5ACD,
+transparent);
+
+box-shadow:
+0 0 8px rgba(68,199,255,.35),
+0 0 18px rgba(168,85,247,.25);
+
+border-radius:999px;
+
+}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🚨 Operational Fault Intelligence Platform")
-st.caption("Fault Analytics • Risk Analysis • Downtime Intelligence")
+st.markdown("""
+<h1 style='
+font-size:64px;
+font-weight:900;
+margin-bottom:10px;
+line-height:1.1;
+background:linear-gradient(90deg,#39B8FF,#7C5CFF,#C471ED,#FF5ACD);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+text-shadow:0 0 25px rgba(100,150,255,.35);
+'>
 
+🚨 Operational Fault Dashboard
+
+</h1>
+
+<p style='
+font-size:20px;
+color:#A7B6D7;
+margin-top:-8px;
+margin-bottom:35px;
+'>
+
+Real-time fault analytics, downtime intelligence and operational performance insights.
+
+</p>
+""", unsafe_allow_html=True)
 # ==========================================
 # DOWNTIME CONVERTER
 # ==========================================
@@ -122,6 +536,10 @@ df["Downtime_Minutes"] = (
     df["Down Time"]
     .apply(convert_downtime_to_minutes)
 )
+
+df["Downtime_Hours"] = (
+    df["Downtime_Minutes"] / 60
+).round(1)
 
 def format_downtime(minutes):
 
@@ -227,53 +645,167 @@ else:
 # ==========================================
 
 st.markdown("""
-## 📊 Executive Operations Dashboard
-Real-Time Fault Analytics & Downtime Intelligence
-""")
+<div class="gradient-heading">
+📊 Dashboard Overview
+</div>
 
-st.metric(
-    "🏥 Operational Health Score",
-    f"{health_score}/100",
-    status
+<div class="section-note">
+Monitor the overall status of faults and maintenance performance.
+</div>
+
+<br>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div style="
+background:rgba(15,18,35,.8);
+border:1px solid rgba(80,140,255,.35);
+border-radius:20px;
+padding:25px;
+margin-bottom:25px;
+box-shadow:0 0 18px rgba(70,120,255,.15);
+">
+
+<div style="font-size:18px;color:#A5B4FC;font-weight:600;">
+🏥 Overall Health Score
+</div>
+
+<div style="font-size:56px;font-weight:800;color:white;margin-top:10px;">
+{health_score}<span style="font-size:28px;color:#A5B4FC;"> /100</span>
+</div>
+
+<div style="font-size:18px;color:#A5B4FC;margin-top:8px;">
+{status}
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+k1, k2, k3, k4, k5 = st.columns(5)
+
+cards = [
+
+("📋 Total Faults",
+ f"{len(filtered_df):,}",
+ "Recorded faults",
+ "#3B82F6"),
+
+("📍 Locations",
+ filtered_df["Location"].nunique(),
+ "Affected locations",
+ "#10B981"),
+
+("📂 Categories",
+ filtered_df["Category"].nunique(),
+ "Fault categories",
+ "#F59E0B"),
+
+("🔧 Fault Types",
+ filtered_df["Type"].nunique(),
+ "Different fault types",
+ "#8B5CF6"),
+
+("⏱ Avg Downtime",
+ f"{filtered_df['Downtime_Hours'].mean():.1f} hrs",
+ "Average repair time",
+ "#EF4444")
+
+]
+
+for col, card in zip([k1,k2,k3,k4,k5], cards):
+
+    title,value,subtitle,accent = card
+
+    with col:
+
+        st.markdown(f"""
+        <div class="kpi-card"
+        style="--accent:{accent};">
+
+        <div class="kpi-title">
+
+        {title}
+
+        </div>
+
+        <div class="kpi-value">
+
+        {value}
+
+        </div>
+
+        <div class="kpi-sub">
+
+        {subtitle}
+
+        </div>
+
+        </div>
+        """, unsafe_allow_html=True)
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
 )
+def style_chart(fig):
 
-c1, c2, c3, c4, c5 = st.columns(5)
+    fig.update_layout(
 
-c1.metric(
-    "Total Faults",
-    f"{len(filtered_df):,}"
-)
+        template="plotly_dark",
 
-c2.metric(
-    "Locations",
-    filtered_df["Location"].nunique()
-)
+        paper_bgcolor="rgba(0,0,0,0)",
 
-c3.metric(
-    "Categories",
-    filtered_df["Category"].nunique()
-)
+        plot_bgcolor="rgba(0,0,0,0)",
 
-c4.metric(
-    "Fault Types",
-    filtered_df["Type"].nunique()
-)
+        font=dict(
+            color="white",
+            size=16
+        ),
 
-c5.metric(
-    "Avg Downtime (hrs)",
-    round(
-        filtered_df["Downtime_Minutes"].mean() / 60,
-        1
+
+        margin=dict(
+            l=20,
+            r=20,
+            t=20,
+            b=20
+        ),
+
+        legend=dict(
+            orientation="h",
+            y=1.1
+        ),
+
+        xaxis=dict(
+    showgrid=False,
+    zeroline=False,
+    tickangle=-20,
+    tickfont=dict(size=12)
+),
+
+        yaxis=dict(
+    showgrid=True,
+    gridcolor="rgba(255,255,255,0.08)",
+    zeroline=False,
+    tickfont=dict(size=12)
+),
+
     )
-)
 
-st.divider()
-
+    return fig
 # ==========================================
 # TREND INTELLIGENCE
 # ==========================================
 
-st.subheader("📈 Trend Intelligence")
+st.markdown("""
+<div class="gradient-heading">
+📈 Fault Trend
+</div>
+
+<div class="section-note">
+Number of faults recorded over time.
+</div>
+
+<br>
+""", unsafe_allow_html=True)
 
 trend_df = filtered_df.copy()
 
@@ -297,60 +829,80 @@ fig_trend = px.line(
     x="Date",
     y="Fault Count",
     markers=True,
-    title="Fault Volume Over Time"
+    text="Fault Count"
 )
+
+
+
+fig_trend.update_traces(
+
+    line=dict(width=4),
+
+    marker=dict(size=10),
+
+    textposition="top center"
+
+)
+
+style_chart(fig_trend)
 
 st.plotly_chart(
     fig_trend,
-    use_container_width=True
+    use_container_width=True,
+    config={
+        "displayModeBar": False
+    }
 )
 
-st.divider()
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
+)
 
 # ==========================================
 # DOWNTIME INTELLIGENCE
 # ==========================================
 
-st.subheader("⏱️ Downtime Intelligence")
+st.subheader("⏱️ Downtime Analysis")
 
 total_downtime_hours = round(
-    filtered_df["Downtime_Minutes"].sum() / 60,
+    filtered_df["Downtime_Hours"].sum(),
     1
 )
 
 location_downtime = (
-    filtered_df.groupby("Location")["Downtime_Minutes"]
+    filtered_df.groupby("Location")["Downtime_Hours"]
     .sum()
     .sort_values(ascending=False)
 )
 
 category_downtime = (
-    filtered_df.groupby("Category")["Downtime_Minutes"]
+    filtered_df.groupby("Category")["Downtime_Hours"]
     .sum()
     .sort_values(ascending=False)
 )
 
 fault_downtime = (
-    filtered_df.groupby("Type")["Downtime_Minutes"]
+    filtered_df.groupby("Type")["Downtime_Hours"]
     .sum()
     .sort_values(ascending=False)
 )
 
 top_location = location_downtime.index[0]
 top_location_hours = round(
-    location_downtime.iloc[0] / 60,
+    location_downtime.iloc[0],
     1
 )
 
 top_category = category_downtime.index[0]
 top_category_hours = round(
-    category_downtime.iloc[0] / 60,
+    category_downtime.iloc[0],
     1
 )
 
 top_fault = fault_downtime.index[0]
 top_fault_hours = round(
-    fault_downtime.iloc[0] / 60,
+    fault_downtime.iloc[0],
     1
 )
 
@@ -376,52 +928,111 @@ d4.metric(
     top_fault
 )
 
-st.caption(
-    f"""
-Highest downtime location:
-{top_location} ({top_location_hours:,.1f} hrs)
+emergency_pct = (
+    emergency_count /
+    len(filtered_df)
+) * 100
+st.markdown(f"""
+<div style="
+background:rgba(15,18,35,.78);
+border-radius:18px;
+padding:22px;
+border:1px solid rgba(80,140,255,.25);
+margin-bottom:25px;
+">
 
-Highest downtime category:
-{top_category} ({top_category_hours:,.1f} hrs)
+<h3 style="margin-top:0;color:#60A5FA;">
+🔍 Key Findings
+</h3>
 
-Highest downtime fault:
-{top_fault} ({top_fault_hours:,.1f} hrs)
-"""
-)
+<div style="font-size:17px;line-height:2;color:white;">
+
+📍 <b>Highest Downtime Location</b><br>
+{top_location} ({top_location_hours:.1f} hrs)
+
+<br><br>
+
+📂 <b>Highest Downtime Category</b><br>
+{top_category} ({top_category_hours:.1f} hrs)
+
+<br><br>
+
+
+🚨 <b>Emergency Faults</b><br>
+
+{emergency_pct:.1f}% of all recorded faults
+
+<br><br>
+🔧 <b>Highest Downtime Fault</b><br>
+{top_fault} ({top_fault_hours:.1f} hrs)
+
+</div>
+
+</div>
+""", unsafe_allow_html=True)
 
 col_dt1, col_dt2 = st.columns(2)
 
 with col_dt1:
 
-    st.subheader("📍 Top Locations by Downtime")
+    st.subheader("📍 Top 10 Locations by Total Downtime (Hours)")
 
     fig_dt1 = px.bar(
         location_downtime.head(10).reset_index(),
         x="Location",
-        y="Downtime_Minutes"
+        y="Downtime_Hours",
+        text="Downtime_Hours",
+        labels={
+            "Downtime_Hours": "Downtime (Hours)"
+        }
     )
+
+    fig_dt1.update_traces(
+        textposition="outside",
+        texttemplate="%{text:,.1f} hrs",
+        marker_line_width=0
+    )
+
+    style_chart(fig_dt1)
 
     st.plotly_chart(
         fig_dt1,
-        use_container_width=True
+        use_container_width=True,
+        config={"displayModeBar": False}
     )
 
 with col_dt2:
 
-    st.subheader("🚨 Top Fault Types by Downtime")
+    st.subheader("📍 Top 10 Locations by Total Downtime (Hours)")
 
     fig_dt2 = px.bar(
         fault_downtime.head(10).reset_index(),
         x="Type",
-        y="Downtime_Minutes"
+        y="Downtime_Hours",
+        text="Downtime_Hours",
+        labels={
+            "Downtime_Hours": "Downtime (Hours)"
+        }
     )
+
+    fig_dt2.update_traces(
+        textposition="outside",
+        marker_line_width=0,
+        texttemplate="%{text:,.1f} hrs"
+    )
+
+    style_chart(fig_dt2)
 
     st.plotly_chart(
         fig_dt2,
-        use_container_width=True
+        use_container_width=True,
+        config={"displayModeBar": False}
     )
 
-st.divider()
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
+)
 
 # ==========================================
 # RISK INTELLIGENCE
@@ -486,19 +1097,62 @@ risk_df = risk_df.rename(
     }
 )
 
+risk_df["Priority"] = "🟢 Low"
+
+risk_df.loc[
+    risk_df["Risk Score"] >= risk_df["Risk Score"].quantile(0.66),
+    "Priority"
+] = "🔴 High"
+
+risk_df.loc[
+    (
+        risk_df["Risk Score"] >= risk_df["Risk Score"].quantile(0.33)
+    ) &
+    (
+        risk_df["Risk Score"] < risk_df["Risk Score"].quantile(0.66)
+    ),
+    "Priority"
+] = "🟠 Medium"
+
+st.markdown("""
+<div class="gradient-heading">
+⚠ Maintenance Priority
+</div>
+
+<div class="section-note">
+Categories requiring the most attention.
+</div>
+
+<br>
+""", unsafe_allow_html=True)
+
 st.dataframe(
-    risk_df,
+
+    risk_df[
+        [
+            "Category",
+            "Fault Count",
+            "Avg Downtime (hrs)",
+            "Priority"
+        ]
+    ],
+
     use_container_width=True,
+
     hide_index=True
+
 )
 
 # ==========================================
 # CRITICAL FAULT RADAR
 # ==========================================
 
-st.divider()
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
+)
 
-st.subheader("🚨 Critical Fault Radar")
+st.subheader("🚨 Fault Impact Analysis")
 
 severity_weights = {
     "Emergency": 5,
@@ -531,8 +1185,15 @@ fig_radar = px.bar(
     impact_summary,
     x="Type",
     y="Impact Score",
-    title="Highest Operational Impact Faults"
+    text="Impact Score"
 )
+
+fig_radar.update_traces(
+    textposition="outside",
+    marker_line_width=0
+)
+
+style_chart(fig_radar)
 
 st.plotly_chart(
     fig_radar,
@@ -561,43 +1222,125 @@ with col1:
     ]
 
     fig = px.bar(
-        severity_counts,
-        x="Severity",
-        y="Count"
+    severity_counts,
+    x="Severity",
+    y="Count",
+    text="Count"
     )
-
+    
+    fig.update_traces(
+        textposition="outside",
+        marker_line_width=0
+    )
+    
+    style_chart(fig)
+    
     st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+            fig,
+            use_container_width=True
+        )
 
 with col2:
 
-    st.subheader("📂 Category Distribution")
+    st.markdown("""
+<div class="gradient-heading">
+🚨 Severity Breakdown
+</div>
 
-    category_counts = (
-        filtered_df["Category"]
+<div class="section-note">
+Distribution of faults by severity.
+</div>
+
+<br>
+""", unsafe_allow_html=True)
+
+    severity_summary = (
+        filtered_df["Severity"]
         .value_counts()
-        .head(10)
         .reset_index()
     )
 
-    category_counts.columns = [
-        "Category",
+    severity_summary.columns = [
+        "Severity",
         "Count"
     ]
 
     fig2 = px.pie(
-        category_counts,
-        names="Category",
-        values="Count"
+
+        severity_summary,
+
+        names="Severity",
+
+        values="Count",
+
+        hole=0.65,
+
+        color="Severity",
+
+        color_discrete_map={
+
+            "Emergency": "#EF4444",
+            "Urgent": "#F59E0B",
+            "Normal": "#3B82F6",
+            "Low": "#22C55E"
+
+        }
+
+    )
+
+    fig2.update_traces(
+
+        textposition="inside",
+
+        textinfo="label+percent",
+
+        textfont_size=15,
+
+        marker=dict(
+
+            line=dict(
+
+                color="#111827",
+
+                width=2
+
+            )
+
+        )
+
+    )
+
+    style_chart(fig2)
+
+    fig2.add_annotation(
+
+        text=f"<b>{len(filtered_df):,}</b><br>Total Faults",
+
+        x=0.5,
+
+        y=0.5,
+
+        showarrow=False,
+
+        font=dict(
+
+            size=22,
+
+            color="white"
+
+        )
+
     )
 
     st.plotly_chart(
-        fig2,
-        use_container_width=True
-    )
 
+        fig2,
+
+        use_container_width=True,
+
+        config={"displayModeBar": False}
+
+    )
 # ==========================================
 # CHART ROW 2
 # ==========================================
@@ -621,10 +1364,18 @@ with col3:
     ]
 
     fig3 = px.bar(
-        type_counts,
-        x="Type",
-        y="Count"
-    )
+    type_counts,
+    x="Type",
+    y="Count",
+    text="Count"
+)
+
+    fig3.update_traces(
+    textposition="outside",
+    marker_line_width=0
+)
+
+    style_chart(fig3)
 
     st.plotly_chart(
         fig3,
@@ -648,23 +1399,47 @@ with col4:
     ]
 
     fig4 = px.bar(
+
         location_counts,
+
         x="Location",
-        y="Count"
+
+        y="Count",
+
+        text="Count"
+
     )
 
+    fig4.update_traces(
+
+        textposition="outside",
+
+        marker_line_width=0
+
+    )
+
+    style_chart(fig4)
+
     st.plotly_chart(
+
         fig4,
-        use_container_width=True
+
+        use_container_width=True,
+
+        config={"displayModeBar": False}
+
     )
 
 # ==========================================
 # AI INSIGHTS
 # ==========================================
 
-st.divider()
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
+)
 
-st.subheader("🤖 AI Executive Insights")
+st.subheader("🤖 AI Summary & Recommendations")
 
 top_location = filtered_df["Location"].value_counts().idxmax()
 top_type = filtered_df["Type"].value_counts().idxmax()
@@ -686,42 +1461,87 @@ emergency_pct = round(
     2
 )
 
-st.info(f"""
-EXECUTIVE SUMMARY
+st.markdown(f"""
+<div style="
+background:rgba(15,18,35,.80);
+border-radius:20px;
+padding:25px;
+border:1px solid rgba(80,140,255,.25);
+">
 
-Analysis of {len(filtered_df):,} operational faults identified
-'{top_type}' as the most frequently occurring fault type.
+<h2 style="color:#60A5FA;margin-top:0;">
+📌 Executive Summary
+</h2>
 
-The highest concentration of incidents occurred at
-'{top_location}'.
+<hr style="border:1px solid rgba(255,255,255,.08);">
 
-The fault type generating the greatest operational impact was
-'{top_fault}', contributing approximately
-{top_fault_hours:,.1f} downtime hours.
+<h3 style="color:white;">
+📍 Key Findings
+</h3>
 
-Emergency incidents accounted for
-{emergency_pct}% of all recorded faults.
+<ul style="font-size:17px;color:#D1D5DB;line-height:2;">
 
-RECOMMENDATIONS
+<li><b>{top_location}</b> recorded the highest number of faults.</li>
 
-• Prioritise preventive maintenance at high-frequency locations.
+<li><b>{top_fault}</b> contributed the highest downtime.</li>
 
-• Investigate recurring causes of '{top_fault}'.
+<li><b>{top_category}</b> has the highest calculated risk.</li>
 
-• Focus resources on critical categories identified in the Risk Matrix.
+<li><b>{emergency_pct:.1f}%</b> of recorded faults are emergency cases.</li>
 
-• Continue monitoring fault trends to minimise operational disruption.
-""")
+</ul>
 
+<hr style="border:1px solid rgba(255,255,255,.08);">
+
+<h3 style="color:white;">
+⚠ Priority Actions
+</h3>
+
+<ul style="font-size:17px;color:#D1D5DB;line-height:2;">
+
+<li>Increase preventive maintenance for <b>{top_location}</b>.</li>
+
+<li>Investigate recurring <b>{top_fault}</b> faults.</li>
+
+<li>Prioritise maintenance for <b>{top_category}</b>.</li>
+
+<li>Continue monitoring emergency faults weekly.</li>
+
+</ul>
+
+<hr style="border:1px solid rgba(255,255,255,.08);">
+
+<h3 style="color:white;">
+📊 Overall Status
+</h3>
+
+<p style="font-size:22px;color:white;">
+
+Overall Health Score:
+<b>{health_score}/100</b>
+
+</p>
+
+<p style="font-size:20px;color:#60A5FA;">
+
+{status}
+
+</p>
+
+</div>
+""", unsafe_allow_html=True)
 # ==========================================
-# EXECUTIVE REPORT GENERATOR
+# FAULT REPORT GENERATOR
 # ==========================================
 
-st.divider()
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
+)
 
-st.subheader("📄 Executive Report Generator")
+st.subheader("📄 Fault Report Generator")
 
-if st.button("Generate Executive Report"):
+if st.button("Generate Fault Report"):
 
     buffer = BytesIO()
 
@@ -733,14 +1553,14 @@ if st.button("Generate Executive Report"):
 
     report.append(
         Paragraph(
-            "Operational Fault Intelligence Platform",
+            "Operational Fault Platform",
             styles["Title"]
         )
     )
 
     report.append(
         Paragraph(
-            "Executive Fault Analysis Report",
+            "Fault Analysis Report",
             styles["Heading2"]
         )
     )
@@ -793,7 +1613,7 @@ if st.button("Generate Executive Report"):
 
     report.append(
         Paragraph(
-            "Executive Recommendations",
+            "Fault Recommendations",
             styles["Heading2"]
         )
     )
@@ -820,7 +1640,7 @@ if st.button("Generate Executive Report"):
     pdf = buffer.getvalue()
 
     st.download_button(
-        label="📥 Download Executive Report",
+        label="📥 Download Fault Report",
         data=pdf,
         file_name="Executive_Fault_Report.pdf",
         mime="application/pdf"
@@ -830,7 +1650,10 @@ if st.button("Generate Executive Report"):
 # FAULT EXPLORER
 # ==========================================
 
-st.divider()
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
+)
 
 st.subheader("🔎 Fault Explorer")
 
@@ -870,14 +1693,13 @@ display_df = display_df.rename(
     }
 )
 
-st.dataframe(
-    display_df,
-    use_container_width=True,
-    hide_index=True
+
+    
+st.markdown(
+    '<div class="cyber-divider"></div>',
+    unsafe_allow_html=True
 )
 
-st.divider()
-
 st.caption(
-    "Operational Fault Intelligence Platform (OFIP) v2.0 | Built with Python, Streamlit & AI Analytics - by Firdaus"
+    "Operational Fault Analysis System | Built with Python, Streamlit & AI Analytics - by Firdaus"
 )
