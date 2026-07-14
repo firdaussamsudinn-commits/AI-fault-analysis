@@ -527,6 +527,12 @@ if uploaded_file is None:
 
 df = pd.read_excel(uploaded_file)
 
+
+df["Open Time"] = pd.to_datetime(
+    df["Open Time"],
+    errors="coerce"
+)
+
 df["Open Time"] = pd.to_datetime(
     df["Open Time"],
     errors="coerce"
@@ -791,6 +797,7 @@ def style_chart(fig):
     )
 
     return fig
+
 # ==========================================
 # TREND INTELLIGENCE
 # ==========================================
@@ -807,41 +814,62 @@ Number of faults recorded over time.
 <br>
 """, unsafe_allow_html=True)
 
+trend_option = st.radio(
+    "📊 Trend Period",
+    ["Daily", "Weekly", "Monthly"],
+    index=2,
+    horizontal=True
+)
+
 trend_df = filtered_df.copy()
+trend_df = trend_df.dropna(subset=["Open Time"])
 
-trend_df = trend_df.dropna(
-    subset=["Open Time"]
-)
+if trend_option == "Daily":
 
-trend_df["Date"] = (
-    trend_df["Open Time"]
-    .dt.date
-)
+    chart_df = (
+        trend_df
+        .groupby(trend_df["Open Time"].dt.date)
+        .size()
+        .reset_index(name="Fault Count")
+    )
 
-daily_trend = (
-    trend_df.groupby("Date")
-    .size()
-    .reset_index(name="Fault Count")
-)
+    chart_df.rename(columns={"Open Time": "Date"}, inplace=True)
+
+elif trend_option == "Weekly":
+
+    chart_df = (
+        trend_df
+        .groupby(trend_df["Open Time"].dt.to_period("W"))
+        .size()
+        .reset_index(name="Fault Count")
+    )
+
+    chart_df["Open Time"] = chart_df["Open Time"].dt.start_time
+    chart_df.rename(columns={"Open Time": "Date"}, inplace=True)
+
+else:
+
+    chart_df = (
+        trend_df
+        .groupby(trend_df["Open Time"].dt.to_period("M"))
+        .size()
+        .reset_index(name="Fault Count")
+    )
+
+    chart_df["Open Time"] = chart_df["Open Time"].dt.start_time
+    chart_df.rename(columns={"Open Time": "Date"}, inplace=True)
 
 fig_trend = px.line(
-    daily_trend,
+    chart_df,
     x="Date",
     y="Fault Count",
-    markers=True,
-    text="Fault Count"
+    markers=True
 )
 
-
-
 fig_trend.update_traces(
-
     line=dict(width=4),
-
-    marker=dict(size=10),
-
-    textposition="top center"
-
+    marker=dict(size=8),
+    hovertemplate="<b>%{x}</b><br>Faults: %{y}<extra></extra>"
 )
 
 style_chart(fig_trend)
@@ -849,9 +877,7 @@ style_chart(fig_trend)
 st.plotly_chart(
     fig_trend,
     use_container_width=True,
-    config={
-        "displayModeBar": False
-    }
+    config={"displayModeBar": False}
 )
 
 st.markdown(
@@ -1003,7 +1029,7 @@ with col_dt1:
 
 with col_dt2:
 
-    st.subheader("📍 Top 10 Locations by Total Downtime (Hours)")
+    st.subheader("📍 Top 10 Type of Faults by Total Downtime (Hours)")
 
     fig_dt2 = px.bar(
         fault_downtime.head(10).reset_index(),
@@ -1266,80 +1292,88 @@ Distribution of faults by severity.
     ]
 
     fig2 = px.pie(
-
         severity_summary,
-
         names="Severity",
-
         values="Count",
-
         hole=0.65,
-
         color="Severity",
-
         color_discrete_map={
-
             "Emergency": "#EF4444",
             "Urgent": "#F59E0B",
             "Normal": "#3B82F6",
             "Low": "#22C55E"
-
         }
-
     )
 
     fig2.update_traces(
-
         textposition="inside",
-
         textinfo="label+percent",
-
         textfont_size=15,
-
         marker=dict(
-
             line=dict(
-
                 color="#111827",
-
                 width=2
-
             )
-
         )
-
     )
 
     style_chart(fig2)
 
     fig2.add_annotation(
-
         text=f"<b>{len(filtered_df):,}</b><br>Total Faults",
-
         x=0.5,
-
         y=0.5,
-
         showarrow=False,
-
         font=dict(
-
             size=22,
-
             color="white"
-
         )
-
     )
 
+    fig2.update_layout(showlegend=False)
+    
+    legend_col1, legend_col2 = st.columns(2)
+    
+    left = severity_summary.iloc[:4]
+    right = severity_summary.iloc[4:]
+    
+    colour_map = {
+        "Normal":"🟦",
+        "Urgent":"🟨",
+        "Emergency":"🟥",
+        "Emergency (Cleaning)":"🟧",
+        "Emergency (Pest)":"🟪",
+        "Non-Emergency (Cleaning)":"🟩",
+        "Non-Emergency (Pest)":"🟦",
+        "Fire Alarm":"🟨"
+    }
+    
+    with legend_col1:
+    
+        for _, row in left.iterrows():
+    
+            icon = colour_map.get(row["Severity"], "⬜")
+    
+            st.markdown(
+                f"{icon} **{row['Severity']}**&nbsp;&nbsp;&nbsp;&nbsp;**{row['Count']:,}**",
+                unsafe_allow_html=True
+            )
+    
+    with legend_col2:
+    
+        for _, row in right.iterrows():
+    
+            icon = colour_map.get(row["Severity"], "⬜")
+    
+            st.markdown(
+                f"{icon} **{row['Severity']}**&nbsp;&nbsp;&nbsp;&nbsp;**{row['Count']:,}**",
+                unsafe_allow_html=True
+            )
+    
     st.plotly_chart(
-
         fig2,
-
         use_container_width=True,
-
         config={"displayModeBar": False}
-
     )
 # ==========================================
 # CHART ROW 2
@@ -1663,15 +1697,29 @@ search_term = st.text_input(
 
 if search_term:
 
-    display_df = filtered_df[
-        filtered_df["Details"]
-        .astype(str)
-        .str.contains(
-            search_term,
-            case=False,
-            na=False
-        )
+    search_columns = [
+    "Location",
+    "Category",
+    "Type",
+    "Severity",
+    "Details"
     ]
+
+    mask = (
+        filtered_df[search_columns]
+        .fillna("")
+        .astype(str)
+        .apply(
+            lambda col: col.str.contains(
+                search_term,
+                case=False,
+                na=False
+            )
+        )
+        .any(axis=1)
+    )
+
+    display_df = filtered_df[mask]
 
 else:
 
@@ -1693,7 +1741,11 @@ display_df = display_df.rename(
     }
 )
 
-
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True
+)
     
 st.markdown(
     '<div class="cyber-divider"></div>',
