@@ -614,6 +614,10 @@ if type_filter:
         filtered_df["Type"].isin(type_filter)
     ]
 
+if filtered_df.empty:
+    st.warning("⚠️ No data matches the selected filters.")
+    st.stop()
+
 # ==========================================
 # OPERATIONAL HEALTH SCORE
 # ==========================================
@@ -914,23 +918,26 @@ fault_downtime = (
     .sort_values(ascending=False)
 )
 
-top_location = location_downtime.index[0]
-top_location_hours = round(
-    location_downtime.iloc[0],
-    1
-)
+if not location_downtime.empty:
+    top_location = location_downtime.index[0]
+    top_location_hours = round(location_downtime.iloc[0], 1)
+else:
+    top_location = "No data"
+    top_location_hours = 0
 
-top_category = category_downtime.index[0]
-top_category_hours = round(
-    category_downtime.iloc[0],
-    1
-)
+if not category_downtime.empty:
+    top_category = category_downtime.index[0]
+    top_category_hours = round(category_downtime.iloc[0], 1)
+else:
+    top_category = "No data"
+    top_category_hours = 0
 
-top_fault = fault_downtime.index[0]
-top_fault_hours = round(
-    fault_downtime.iloc[0],
-    1
-)
+if not fault_downtime.empty:
+    top_fault = fault_downtime.index[0]
+    top_fault_hours = round(fault_downtime.iloc[0], 1)
+else:
+    top_fault = "No data"
+    top_fault_hours = 0
 
 d1, d2, d3, d4 = st.columns(4)
 
